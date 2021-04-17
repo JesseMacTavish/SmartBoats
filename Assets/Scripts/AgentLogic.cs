@@ -72,7 +72,7 @@ public struct AgentData
                     float multiplierWeight, float multiplierDistanceFactor)
     {
         //Variables initialization
-        
+
         //Default boxes, boats and pirates
         this.steps = steps;
         this.rayRadius = rayRadius;
@@ -141,6 +141,10 @@ public class AgentLogic : MonoBehaviour, IComparable
     private float enemyWeight;
     [SerializeField]
     private float enemyDistanceFactor;
+
+    [Header("Abled agent")]
+    [SerializeField]
+    private bool abled;
 
     //Powerups
     [Space(10)]
@@ -213,13 +217,16 @@ public class AgentLogic : MonoBehaviour, IComparable
         enemyWeight = parent.enemyWeight;
         enemyDistanceFactor = parent.enemyDistanceFactor;
 
-        //Powerups
-        speedWeight = parent.speedWeight;
-        speedDistanceFactor = parent.speedDistanceFactor;
-        pullWeight = parent.pullWeight;
-        pullDistanceFactor = parent.pullDistanceFactor;
-        multiplierWeight = parent.multiplierWeight;
-        multiplierDistanceFactor = parent.multiplierDistanceFactor;
+        //Powerups. If the agent is not abled, the value of powerups will always be 0.
+        if (abled)
+        {
+            speedWeight = parent.speedWeight;
+            speedDistanceFactor = parent.speedDistanceFactor;
+            pullWeight = parent.pullWeight;
+            pullDistanceFactor = parent.pullDistanceFactor;
+            multiplierWeight = parent.multiplierWeight;
+            multiplierDistanceFactor = parent.multiplierDistanceFactor;
+        }
     }
 
     /// <summary>
@@ -294,6 +301,7 @@ public class AgentLogic : MonoBehaviour, IComparable
         {
             enemyDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
         }
+
     }
 
     private void Update()
@@ -301,6 +309,29 @@ public class AgentLogic : MonoBehaviour, IComparable
         if (_isAwake)
         {
             Act();
+        }
+    }
+
+    //Collect the powerups. Universal for both boats and pirates.
+    private void OnTriggerEnter(Collider other)
+    {
+        //Work only for abled agents
+        if (!abled)
+        {
+            return;
+        }
+
+        if (other.gameObject.tag.Equals("Speed"))
+        {
+            Destroy(other.gameObject);
+        }
+        if (other.gameObject.tag.Equals("Pull"))
+        {
+            Destroy(other.gameObject);
+        }
+        if (other.gameObject.tag.Equals("Multiplier"))
+        {
+            Destroy(other.gameObject);
         }
     }
 
@@ -396,13 +427,13 @@ public class AgentLogic : MonoBehaviour, IComparable
                     utility = distanceIndex * enemyDistanceFactor + enemyWeight;
                     break;
                 case "Speed":
-                    utility = distanceIndex * enemyDistanceFactor + enemyWeight;
+                    utility = distanceIndex * speedDistanceFactor + speedWeight;
                     break;
                 case "Pull":
-                    utility = distanceIndex * enemyDistanceFactor + enemyWeight;
+                    utility = distanceIndex * pullDistanceFactor + pullWeight;
                     break;
                 case "Multiplier":
-                    utility = distanceIndex * enemyDistanceFactor + enemyWeight;
+                    utility = distanceIndex * multiplierDistanceFactor + multiplierWeight;
                     break;
             }
         }

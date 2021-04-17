@@ -15,7 +15,7 @@ public class BoatLogic : AgentLogic
         {
             points += _boxPoints;
             Destroy(other.gameObject);
-        }
+        }        
     }
     
     private void OnCollisionEnter(Collision other)
