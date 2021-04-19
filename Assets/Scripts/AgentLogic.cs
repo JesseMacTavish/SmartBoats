@@ -313,7 +313,7 @@ public class AgentLogic : MonoBehaviour, IComparable
     }
 
     //Collect the powerups. Universal for both boats and pirates.
-    private void OnTriggerEnter(Collider other)
+    protected void OnTriggerEnter(Collider other)
     {
         //Work only for abled agents
         if (!abled)

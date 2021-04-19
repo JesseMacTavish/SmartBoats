@@ -42952,7 +42952,7 @@ MonoBehaviour:
   - {fileID: 5755888960359600254, guid: db783958a9f10a84cafd2e28a1650aca, type: 3}
   - {fileID: 5755888960359600254, guid: 5d0de06cb51f086439a1210a57b0207c, type: 3}
   - {fileID: 5755888960359600254, guid: 741559d37b7e9d8438ace1afa241cbb2, type: 3}
-  count: 20
+  count: 40
   randomRotationMinimal: {x: 10, y: -89, z: 10}
   randomRotationMaximal: {x: 10, y: 90, z: 10}
 --- !u!4 &1017698539
@@ -60460,6 +60460,8 @@ MonoBehaviour:
   - {fileID: 1204097874}
   boatGenerator: {fileID: 1829776929}
   pirateGenerator: {fileID: 1003293718}
+  abledBoatGenerator: {fileID: 937517551}
+  abledPirateGenerator: {fileID: 1795894184}
   mutationFactor: 3.5
   mutationChance: 35
   boatParentSize: 5
@@ -60488,6 +60490,42 @@ MonoBehaviour:
     multiplierWeight: 0
     multiplierDistanceFactor: 0
   lastPirateWinnerData:
+    steps: 0
+    rayRadius: 0
+    sight: 0
+    movingSpeed: 0
+    randomDirectionValue: {x: 0, y: 0}
+    boxWeight: 0
+    distanceFactor: 0
+    boatWeight: 0
+    boatDistanceFactor: 0
+    enemyWeight: 0
+    enemyDistanceFactor: 0
+    speedWeight: 0
+    speedDistanceFactor: 0
+    pullWeight: 0
+    pullDistanceFactor: 0
+    multiplierWeight: 0
+    multiplierDistanceFactor: 0
+  lastAbledBoatWinnerData:
+    steps: 0
+    rayRadius: 0
+    sight: 0
+    movingSpeed: 0
+    randomDirectionValue: {x: 0, y: 0}
+    boxWeight: 0
+    distanceFactor: 0
+    boatWeight: 0
+    boatDistanceFactor: 0
+    enemyWeight: 0
+    enemyDistanceFactor: 0
+    speedWeight: 0
+    speedDistanceFactor: 0
+    pullWeight: 0
+    pullDistanceFactor: 0
+    multiplierWeight: 0
+    multiplierDistanceFactor: 0
+  lastAbledPirateWinnerData:
     steps: 0
     rayRadius: 0
     sight: 0

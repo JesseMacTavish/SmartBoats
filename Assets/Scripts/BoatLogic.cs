@@ -8,19 +8,22 @@ public class BoatLogic : AgentLogic
     private static float _boxPoints = 2.0f;
     private static float _piratePoints = -100.0f;
     #endregion
-    
-    private void OnTriggerEnter(Collider other)
+
+    protected void OnTriggerEnter(Collider other)
     {
-        if(other.gameObject.tag.Equals("Box"))
+        //Call the base trigger for powerups
+        base.OnTriggerEnter(other);
+
+        if (other.gameObject.tag.Equals("Box"))
         {
             points += _boxPoints;
             Destroy(other.gameObject);
-        }        
+        }
     }
-    
+
     private void OnCollisionEnter(Collision other)
     {
-        if(other.gameObject.tag.Equals("Enemy"))
+        if (other.gameObject.tag.Equals("Enemy"))
         {
             //This is a safe-fail mechanism. In case something goes wrong and the Boat is not destroyed after touching
             //a pirate, it also gets a massive negative number of points.

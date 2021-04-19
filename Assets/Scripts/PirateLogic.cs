@@ -8,10 +8,13 @@ public class PirateLogic : AgentLogic
     private static float _boxPoints = 0.1f;
     private static float _boatPoints = 5.0f;
     #endregion
-    
-    private void OnTriggerEnter(Collider other)
+
+    protected void OnTriggerEnter(Collider other)
     {
-        if(other.gameObject.tag.Equals("Box"))
+        //Call the base trigger for powerups
+        base.OnTriggerEnter(other);
+
+        if (other.gameObject.tag.Equals("Box"))
         {
             points += _boxPoints;
             Destroy(other.gameObject);
@@ -20,7 +23,7 @@ public class PirateLogic : AgentLogic
 
     private void OnCollisionEnter(Collision other)
     {
-        if(other.gameObject.tag.Equals("Boat"))
+        if (other.gameObject.tag.Equals("Boat"))
         {
             points += _boatPoints;
             Destroy(other.gameObject);

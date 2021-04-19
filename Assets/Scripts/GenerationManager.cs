@@ -8,12 +8,19 @@ using Random = UnityEngine.Random;
 public class GenerationManager : MonoBehaviour
 {
     [Header("Generators")]
+    //Default generators
     [SerializeField]
     private GenerateObjectsInArea[] boxGenerators;
     [SerializeField]
     private GenerateObjectsInArea boatGenerator;
     [SerializeField]
     private GenerateObjectsInArea pirateGenerator;
+
+    //Abled generators
+    [SerializeField]
+    private GenerateObjectsInArea abledBoatGenerator;
+    [SerializeField]
+    private GenerateObjectsInArea abledPirateGenerator;
 
     [Space(10)]
     [Header("Parenting and Mutation")]
@@ -46,17 +53,31 @@ public class GenerationManager : MonoBehaviour
     /// Those variables are used mostly for debugging in the inspector.
     /// </summary>
     [Header("Former winners")]
+    //Default winners
     [SerializeField]
     private AgentData lastBoatWinnerData;
     [SerializeField]
     private AgentData lastPirateWinnerData;
 
+    //Abled winners
+    [SerializeField]
+    private AgentData lastAbledBoatWinnerData;
+    [SerializeField]
+    private AgentData lastAbledPirateWinnerData;
+
+    //Default agents
     private bool _runningSimulation;
     private List<BoatLogic> _activeBoats;
     private List<PirateLogic> _activePirates;
     private BoatLogic[] _boatParents;
-    private PirateLogic[] _pirateParents;
-    
+    private PirateLogic[] _pirateParents;   
+
+    //Abled agents
+    private List<BoatLogic> _activeAbledBoats;
+    private List<PirateLogic> _activeAbledPirates;
+    private BoatLogic[] _abledBoatParents;
+    private PirateLogic[] _abledPirateParents;
+
     private void Start()
     {
         if (runOnStart)
@@ -99,10 +120,14 @@ public class GenerationManager : MonoBehaviour
      /// </summary>
      /// <param name="boatParents"></param>
      /// <param name="pirateParents"></param>
-    public void GenerateObjects(BoatLogic[] boatParents = null, PirateLogic[] pirateParents = null)
+    public void GenerateObjects(BoatLogic[] boatParents = null, BoatLogic[] abledBoatParents = null, PirateLogic[] pirateParents = null, PirateLogic[] abledPirateParents = null)
     {
         GenerateBoats(boatParents);
         GeneratePirates(pirateParents);
+
+        //Abled
+        GenerateAbledBoats(abledBoatParents);
+        GenerateAbledPirates(abledPirateParents);
     }
 
      /// <summary>
@@ -124,6 +149,29 @@ public class GenerationManager : MonoBehaviour
                 if (pirateParents != null)
                 {
                     PirateLogic pirateParent = pirateParents[Random.Range(0, pirateParents.Length)];
+                    pirate.Birth(pirateParent.GetData());
+                }
+
+                pirate.Mutate(mutationFactor, mutationChance);
+                pirate.AwakeUp();
+            }
+        }
+    }
+
+    //Similarly generate abled pirates 
+    private void GenerateAbledPirates(PirateLogic[] abledPirateParents)
+    {
+        _activeAbledPirates = new List<PirateLogic>();
+        List<GameObject> objects = abledPirateGenerator.RegenerateObjects();
+        foreach (GameObject obj in objects)
+        {
+            PirateLogic pirate = obj.GetComponent<PirateLogic>();
+            if (pirate != null)
+            {
+                _activeAbledPirates.Add(pirate);
+                if (abledPirateParents != null)
+                {
+                    PirateLogic pirateParent = abledPirateParents[Random.Range(0, abledPirateParents.Length)];
                     pirate.Birth(pirateParent.GetData());
                 }
 
@@ -161,12 +209,35 @@ public class GenerationManager : MonoBehaviour
         }
     }
 
-     /// <summary>
-     /// Creates a new generation by using GenerateBoxes and GenerateBoats/Pirates.
-     /// Previous generations will be removed and the best parents will be selected and used to create the new generation.
-     /// The best parents (top 1) of the generation will be stored as a Prefab in the [savePrefabsAt] folder. Their name
-     /// will use the [generationCount] as an identifier.
-     /// </summary>
+    //Similarly generate abled boats
+    private void GenerateAbledBoats(BoatLogic[] abledBoatParents)
+    {
+        _activeAbledBoats = new List<BoatLogic>();
+        List<GameObject> objects = abledBoatGenerator.RegenerateObjects();
+        foreach (GameObject obj in objects)
+        {
+            BoatLogic boat = obj.GetComponent<BoatLogic>();
+            if (boat != null)
+            {
+                _activeAbledBoats.Add(boat);
+                if (abledBoatParents != null)
+                {
+                    BoatLogic boatParent = abledBoatParents[Random.Range(0, abledBoatParents.Length)];
+                    boat.Birth(boatParent.GetData());
+                }
+
+                boat.Mutate(mutationFactor, mutationChance);
+                boat.AwakeUp();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a new generation by using GenerateBoxes and GenerateBoats/Pirates.
+    /// Previous generations will be removed and the best parents will be selected and used to create the new generation.
+    /// The best parents (top 1) of the generation will be stored as a Prefab in the [savePrefabsAt] folder. Their name
+    /// will use the [generationCount] as an identifier.
+    /// </summary>
     public void MakeNewGeneration()
     {
         GenerateBoxes();
@@ -174,38 +245,62 @@ public class GenerationManager : MonoBehaviour
         //Fetch parents
         _activeBoats.RemoveAll(item => item == null);
         _activeBoats.Sort();
+        _activeAbledBoats.RemoveAll(item => item == null);
+        _activeBoats.Sort();
+
         if (_activeBoats.Count == 0)
         {
             GenerateBoats(_boatParents);
         }
+        if (_activeAbledBoats.Count == 0)
+        {
+            GenerateAbledBoats(_abledBoatParents); 
+        }
+
         _boatParents = new BoatLogic[boatParentSize];
+        _abledBoatParents = new BoatLogic[boatParentSize];
+
         for (int i = 0; i < boatParentSize; i++)
         {
             _boatParents[i] = _activeBoats[i];
+            _abledBoatParents[i] = _activeAbledBoats[i];
         }
 
         BoatLogic lastBoatWinner = _activeBoats[0];
-        lastBoatWinner.name += "Gen-" + generationCount; 
+        BoatLogic lastAbledBoatWinner = _activeAbledBoats[0];
+        lastBoatWinner.name += "Gen-" + generationCount;
+        lastAbledBoatWinner.name += "Gen-" + generationCount; 
         lastBoatWinnerData = lastBoatWinner.GetData();
+        lastAbledBoatWinnerData = lastAbledBoatWinner.GetData();
         PrefabUtility.SaveAsPrefabAsset(lastBoatWinner.gameObject, savePrefabsAt + lastBoatWinner.name + ".prefab");
+        PrefabUtility.SaveAsPrefabAsset(lastAbledBoatWinner.gameObject, savePrefabsAt + lastAbledBoatWinner.name + ".prefab");
         
         _activePirates.RemoveAll(item => item == null);
         _activePirates.Sort();
+        _activeAbledPirates.RemoveAll(item => item == null);
+        _activeAbledPirates.Sort();
         _pirateParents = new PirateLogic[pirateParentSize];
+        _abledPirateParents = new PirateLogic[pirateParentSize];
         for (int i = 0; i < pirateParentSize; i++)
         {
             _pirateParents[i] = _activePirates[i];
+            _abledPirateParents[i] = _activeAbledPirates[i];
         }
 
         PirateLogic lastPirateWinner = _activePirates[0];
-        lastPirateWinner.name += "Gen-" + generationCount; 
+        PirateLogic lastAbledPirateWinner = _activeAbledPirates[0];
+        lastPirateWinner.name += "Gen-" + generationCount;
+        lastAbledPirateWinner.name += "Gen-" + generationCount; 
         lastPirateWinnerData = lastPirateWinner.GetData();
+        lastAbledPirateWinnerData = lastAbledPirateWinner.GetData();
         PrefabUtility.SaveAsPrefabAsset(lastPirateWinner.gameObject, savePrefabsAt + lastPirateWinner.name + ".prefab");
+        PrefabUtility.SaveAsPrefabAsset(lastAbledPirateWinner.gameObject, savePrefabsAt + lastAbledPirateWinner.name + ".prefab");
         
         //Winners:
         Debug.Log("Last winner boat had: " + lastBoatWinner.GetPoints() + " points!" + " Last winner pirate had: " + lastPirateWinner.GetPoints() + " points!");
+        Debug.Log("Last winner ABLED boat had: " + lastAbledBoatWinner.GetPoints() + " points!" + " Last winner ABLED pirate had: " + lastAbledPirateWinner.GetPoints() + " points!");
         
-        GenerateObjects(_boatParents, _pirateParents);
+        GenerateObjects(_boatParents, _abledBoatParents, _pirateParents, _abledPirateParents);
     }
 
      /// <summary>
