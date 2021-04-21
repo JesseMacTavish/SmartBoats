@@ -55,13 +55,14 @@ public struct AgentData
     public float enemyWeight;
     public float enemyDistanceFactor;
 
-    //Powerups
+    //Powerups weights
     public float speedWeight;
     public float speedDistanceFactor;
     public float pullWeight;
     public float pullDistanceFactor;
     public float multiplierWeight;
     public float multiplierDistanceFactor;
+
 
     public AgentData(int steps, int rayRadius, float sight, float movingSpeed, Vector2 randomDirectionValue,
                     float boxWeight, float distanceFactor,
@@ -124,6 +125,11 @@ public class AgentLogic : MonoBehaviour, IComparable
     [SerializeField, Tooltip("All directions starts with a random value from X-Y (Math.Abs, Math.Min and Math.Max are applied).")]
     private Vector2 randomDirectionValue;
 
+    //All visible objects container
+    private Dictionary<GameObject, float> visibleObjects;
+
+    private int actIteration;
+
     //Weights fields
 
     //Default boxes, boats and pirates
@@ -163,6 +169,19 @@ public class AgentLogic : MonoBehaviour, IComparable
     private float multiplierDistanceFactor;
 
     [Space(10)]
+    [Header("Powerups power")]
+    [SerializeField]
+    private float speedMultiplierPower = 2.0f;
+    [SerializeField]
+    private float pullMultiplierPower = 2.0f;
+    [SerializeField]
+    private float pointsMultiplierPower = 2.0f;
+
+    protected float pointsMultiplier = 1.0f;
+    protected float speedMultiplier = 1.0f;
+
+
+    [Space(10)]
     [Header("Debug & Help")]
     [SerializeField]
     private Color visionColor;
@@ -175,11 +194,11 @@ public class AgentLogic : MonoBehaviour, IComparable
 
     #region Static Variables
     private static float _minimalSteps = 1.0f;
-    private static float _minimalRayRadius = 1.0f;
-    private static float _minimalSight = 0.1f;
-    private static float _minimalMovingSpeed = 1.0f;
-    private static float _speedInfluenceInSight = 0.1250f;
-    private static float _sightInfluenceInSpeed = 0.0625f;
+    //private static float _minimalRayRadius = 1.0f;
+    //private static float _minimalSight = 0.1f;
+    //private static float _minimalMovingSpeed = 1.0f;
+    //private static float _speedInfluenceInSight = 0.1250f;
+    //private static float _sightInfluenceInSpeed = 0.0625f;
     private static float _maxUtilityChoiceChance = 0.85f;
     #endregion
 
@@ -196,6 +215,7 @@ public class AgentLogic : MonoBehaviour, IComparable
         points = 0;
         steps = 360 / rayRadius;
         _rigidbody = GetComponent<Rigidbody>();
+        visibleObjects = new Dictionary<GameObject, float>();
     }
 
     /// <summary>
@@ -242,33 +262,37 @@ public class AgentLogic : MonoBehaviour, IComparable
             steps += (int)Random.Range(-mutationFactor, +mutationFactor);
             steps = (int)Mathf.Max(steps, _minimalSteps);
         }
-        if (Random.Range(0.0f, 100.0f) <= mutationChance)
-        {
-            rayRadius += (int)Random.Range(-mutationFactor, +mutationFactor);
-            rayRadius = (int)Mathf.Max(rayRadius, _minimalRayRadius);
-        }
-        if (Random.Range(0.0f, 100.0f) <= mutationChance)
-        {
-            float sightIncrease = Random.Range(-mutationFactor, +mutationFactor);
-            sight += sightIncrease;
-            sight = Mathf.Max(sight, _minimalSight);
-            if (sightIncrease > 0.0f)
-            {
-                movingSpeed -= sightIncrease * _sightInfluenceInSpeed;
-                movingSpeed = Mathf.Max(movingSpeed, _minimalMovingSpeed);
-            }
-        }
-        if (Random.Range(0.0f, 100.0f) <= mutationChance)
-        {
-            float movingSpeedIncrease = Random.Range(-mutationFactor, +mutationFactor);
-            movingSpeed += movingSpeedIncrease;
-            movingSpeed = Mathf.Max(movingSpeed, _minimalMovingSpeed);
-            if (movingSpeedIncrease > 0.0f)
-            {
-                sight -= movingSpeedIncrease * _speedInfluenceInSight;
-                sight = Mathf.Max(sight, _minimalSight);
-            }
-        }
+
+        //DISABLED MOVEMENT SPEED SIGHT MUTATION FOR BALANCED TESTING
+
+        //if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        //{
+        //    rayRadius += (int)Random.Range(-mutationFactor, +mutationFactor);
+        //    rayRadius = (int)Mathf.Max(rayRadius, _minimalRayRadius);
+        //}
+        //if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        //{
+        //    float sightIncrease = Random.Range(-mutationFactor, +mutationFactor);
+        //    sight += sightIncrease;
+        //    sight = Mathf.Max(sight, _minimalSight);
+        //    if (sightIncrease > 0.0f)
+        //    {
+        //        movingSpeed -= sightIncrease * _sightInfluenceInSpeed;
+        //        movingSpeed = Mathf.Max(movingSpeed, _minimalMovingSpeed);
+        //    }
+        //}
+        //if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        //{
+        //    float movingSpeedIncrease = Random.Range(-mutationFactor, +mutationFactor);
+        //    movingSpeed += movingSpeedIncrease;
+        //    movingSpeed = Mathf.Max(movingSpeed, _minimalMovingSpeed);
+        //    if (movingSpeedIncrease > 0.0f)
+        //    {
+        //        sight -= movingSpeedIncrease * _speedInfluenceInSight;
+        //        sight = Mathf.Max(sight, _minimalSight);
+        //    }
+        //}
+
         if (Random.Range(0.0f, 100.0f) <= mutationChance)
         {
             randomDirectionValue.x += Random.Range(-mutationFactor, +mutationFactor);
@@ -302,6 +326,36 @@ public class AgentLogic : MonoBehaviour, IComparable
             enemyDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
         }
 
+        //Powerups factors
+        if (!abled)
+        {
+            return;
+        }
+
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
+            speedWeight += Random.Range(-mutationFactor, +mutationFactor);
+        }
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
+            speedDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
+        }
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
+            pullWeight += Random.Range(-mutationFactor, +mutationFactor);
+        }
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
+            pullDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
+        }
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
+            multiplierWeight += Random.Range(-mutationFactor, +mutationFactor);
+        }
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
+            multiplierDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
+        }
     }
 
     private void Update()
@@ -309,6 +363,11 @@ public class AgentLogic : MonoBehaviour, IComparable
         if (_isAwake)
         {
             Act();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            ActivatePullPowerup();
         }
     }
 
@@ -324,14 +383,17 @@ public class AgentLogic : MonoBehaviour, IComparable
         if (other.gameObject.tag.Equals("Speed"))
         {
             Destroy(other.gameObject);
+            ActivateSpeedPowerup();
         }
         if (other.gameObject.tag.Equals("Pull"))
         {
             Destroy(other.gameObject);
+            ActivatePullPowerup();
         }
         if (other.gameObject.tag.Equals("Multiplier"))
         {
             Destroy(other.gameObject);
+            ActivateMultiplierPowerup();
         }
     }
 
@@ -343,6 +405,13 @@ public class AgentLogic : MonoBehaviour, IComparable
     /// </summary>
     private void Act()
     {
+        //Clear the visible objetcs with a small delay, so that the objects in actual range dont get ignored because the raycast moved
+        if (actIteration >= 60)
+        {
+            visibleObjects.Clear();
+            actIteration = 0;
+        }
+
         Transform selfTransform = transform;
         Vector3 forward = selfTransform.forward;
         //Ignores the y component to avoid flying/sinking Agents.
@@ -374,7 +443,9 @@ public class AgentLogic : MonoBehaviour, IComparable
         transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(highestAgentDirection.Direction), 0.1f);
 
         //Sets the velocity using the chosen direction
-        _rigidbody.velocity = highestAgentDirection.Direction * movingSpeed;
+        _rigidbody.velocity = highestAgentDirection.Direction * movingSpeed * speedMultiplier;
+
+        actIteration++;
 
         if (debug)
         {
@@ -413,8 +484,10 @@ public class AgentLogic : MonoBehaviour, IComparable
             //Thus, closer objects will have a higher value.
             float distanceIndex = 1.0f - distanceNormalized;
 
+            GameObject visibleObject = raycastHit.collider.gameObject;
+
             //Calculate the utility of the found object according to its type.
-            switch (raycastHit.collider.gameObject.tag)
+            switch (visibleObject.tag)
             {
                 //All formulas are the same. Only the weights change.
                 case "Box":
@@ -436,10 +509,39 @@ public class AgentLogic : MonoBehaviour, IComparable
                     utility = distanceIndex * multiplierDistanceFactor + multiplierWeight;
                     break;
             }
+
+            if (visibleObjects.ContainsKey(visibleObject))
+            {
+                visibleObjects[visibleObject] = utility;
+            }
+            else
+            {
+                visibleObjects.Add(visibleObject, utility);
+            }           
         }
 
         direction.utility = utility;
         return direction;
+    }
+
+    private void ActivateSpeedPowerup()
+    {
+        speedMultiplier = speedMultiplierPower;
+
+    }
+
+    private void ActivatePullPowerup()
+    {
+        foreach (GameObject visibleObject in visibleObjects.Keys)
+        {
+            visibleObject.GetComponent<Rigidbody>().velocity += (gameObject.transform.position - visibleObject.transform.position) * pullMultiplierPower;
+            Debug.Log(gameObject.transform.position - visibleObject.transform.position);
+        }
+    }
+
+    private void ActivateMultiplierPowerup()
+    {
+        pointsMultiplier = pointsMultiplierPower;
     }
 
     /// <summary>

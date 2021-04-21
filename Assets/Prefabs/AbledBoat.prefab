@@ -272,7 +272,7 @@ MonoBehaviour:
   steps: 0
   rayRadius: 16
   sight: 30
-  movingSpeed: 5
+  movingSpeed: 10
   randomDirectionValue: {x: -1, y: 1}
   boxWeight: 1
   boxDistanceFactor: 0
@@ -287,6 +287,9 @@ MonoBehaviour:
   pullDistanceFactor: 0
   multiplierWeight: 1
   multiplierDistanceFactor: 0
+  speedMultiplierPower: 2
+  pullMultiplierPower: 300
+  pointsMultiplierPower: 2
   visionColor: {r: 0.21466713, g: 0.29546288, b: 0.6792453, a: 1}
   foundColor: {r: 0.59033465, g: 0.59780955, b: 0.6226415, a: 1}
   directionColor: {r: 0.4433962, g: 0.39784816, b: 0.10666606, a: 1}

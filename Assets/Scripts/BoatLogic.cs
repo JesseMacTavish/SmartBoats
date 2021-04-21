@@ -16,7 +16,7 @@ public class BoatLogic : AgentLogic
 
         if (other.gameObject.tag.Equals("Box"))
         {
-            points += _boxPoints;
+            points += _boxPoints * pointsMultiplier;
             Destroy(other.gameObject);
         }
     }

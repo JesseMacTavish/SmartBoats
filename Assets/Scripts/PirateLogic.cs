@@ -16,7 +16,7 @@ public class PirateLogic : AgentLogic
 
         if (other.gameObject.tag.Equals("Box"))
         {
-            points += _boxPoints;
+            points += _boxPoints * pointsMultiplier;
             Destroy(other.gameObject);
         }
     }
@@ -25,7 +25,7 @@ public class PirateLogic : AgentLogic
     {
         if (other.gameObject.tag.Equals("Boat"))
         {
-            points += _boatPoints;
+            points += _boatPoints * pointsMultiplier;
             Destroy(other.gameObject);
         }
     }

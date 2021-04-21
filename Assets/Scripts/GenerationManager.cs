@@ -246,7 +246,7 @@ public class GenerationManager : MonoBehaviour
         _activeBoats.RemoveAll(item => item == null);
         _activeBoats.Sort();
         _activeAbledBoats.RemoveAll(item => item == null);
-        _activeBoats.Sort();
+        _activeAbledBoats.Sort();
 
         if (_activeBoats.Count == 0)
         {
