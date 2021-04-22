@@ -173,7 +173,7 @@ public class AgentLogic : MonoBehaviour, IComparable
     [SerializeField]
     private float speedMultiplierPower = 2.0f;
     [SerializeField]
-    private float pullMultiplierPower = 2.0f;
+    private float pullPower = 4.0f;
     [SerializeField]
     private float pointsMultiplierPower = 2.0f;
 
@@ -517,7 +517,7 @@ public class AgentLogic : MonoBehaviour, IComparable
             else
             {
                 visibleObjects.Add(visibleObject, utility);
-            }           
+            }
         }
 
         direction.utility = utility;
@@ -534,8 +534,17 @@ public class AgentLogic : MonoBehaviour, IComparable
     {
         foreach (GameObject visibleObject in visibleObjects.Keys)
         {
-            visibleObject.GetComponent<Rigidbody>().velocity += (gameObject.transform.position - visibleObject.transform.position) * pullMultiplierPower;
-            Debug.Log(gameObject.transform.position - visibleObject.transform.position);
+            if (visibleObject == null)
+            {
+                continue;
+            }
+
+            //Pull only objects that you are interested in
+            if (visibleObjects[visibleObject] >= 0)
+            {
+                PullObject pull = visibleObject.AddComponent<PullObject>();
+                pull.SetTargetAndSpeed(gameObject, pullPower);
+            }
         }
     }
 
