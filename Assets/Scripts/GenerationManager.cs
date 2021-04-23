@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+
 public class GenerationManager : MonoBehaviour
 {
     [Header("Generators")]
@@ -15,7 +16,7 @@ public class GenerationManager : MonoBehaviour
     private GenerateObjectsInArea boatGenerator;
     [SerializeField]
     private GenerateObjectsInArea pirateGenerator;
-
+    
     //Abled generators
     [SerializeField]
     private GenerateObjectsInArea abledBoatGenerator;
@@ -307,6 +308,7 @@ public class GenerationManager : MonoBehaviour
         //Winners:
         Debug.Log("Last winner boat had: " + lastBoatWinner.GetPoints() + " points!" + " Last winner pirate had: " + lastPirateWinner.GetPoints() + " points!");
         Debug.Log("Last winner ABLED boat had: " + lastAbledBoatWinner.GetPoints() + " points!" + " Last winner ABLED pirate had: " + lastAbledPirateWinner.GetPoints() + " points!");
+        
 
         GenerateObjects(_boatParents, _abledBoatParents, _pirateParents, _abledPirateParents);
     }

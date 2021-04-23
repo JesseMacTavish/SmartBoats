@@ -58,19 +58,22 @@ public struct AgentData
     //Powerups weights
     public float speedWeight;
     public float speedDistanceFactor;
+    public float speedEnvironmentFactor;
     public float pullWeight;
     public float pullDistanceFactor;
+    public float pullEnvironmentFactor;
     public float multiplierWeight;
     public float multiplierDistanceFactor;
+    public float multiplierEnvironmentFactor;
 
 
     public AgentData(int steps, int rayRadius, float sight, float movingSpeed, Vector2 randomDirectionValue,
                     float boxWeight, float distanceFactor,
                     float boatWeight, float boatDistanceFactor,
                     float enemyWeight, float enemyDistanceFactor,
-                    float speedWeight, float speedDistanceFactor,
-                    float pullWeight, float pullDistanceFactor,
-                    float multiplierWeight, float multiplierDistanceFactor)
+                    float speedWeight, float speedDistanceFactor, float speedEnvironmentFactor,
+                    float pullWeight, float pullDistanceFactor, float pullEnvironmentFactor,
+                    float multiplierWeight, float multiplierDistanceFactor, float multiplierEnvironmentFactor)
     {
         //Variables initialization
 
@@ -90,10 +93,13 @@ public struct AgentData
         //Powerups
         this.speedWeight = speedWeight;
         this.speedDistanceFactor = speedDistanceFactor;
+        this.speedEnvironmentFactor = speedEnvironmentFactor;
         this.pullWeight = pullWeight;
         this.pullDistanceFactor = pullDistanceFactor;
+        this.pullEnvironmentFactor = pullEnvironmentFactor;
         this.multiplierWeight = multiplierWeight;
         this.multiplierDistanceFactor = multiplierDistanceFactor;
+        this.multiplierEnvironmentFactor = multiplierEnvironmentFactor;
     }
 }
 
@@ -127,11 +133,9 @@ public class AgentLogic : MonoBehaviour, IComparable
 
     //All visible objects container
     private Dictionary<GameObject, float> visibleObjects;
-
     private int actIteration;
 
     //Weights fields
-
     //Default boxes, boats and pirates
     [Space(10)]
     [Header("Default Weights")]
@@ -160,14 +164,31 @@ public class AgentLogic : MonoBehaviour, IComparable
     [SerializeField]
     private float speedDistanceFactor;
     [SerializeField]
+    private float speedEnvironmentFactor;
+    [SerializeField]
     private float pullWeight;
     [SerializeField]
     private float pullDistanceFactor;
     [SerializeField]
+    private float pullEnvironmentFactor;
+    [SerializeField]
     private float multiplierWeight;
     [SerializeField]
     private float multiplierDistanceFactor;
+    [SerializeField]
+    private float multiplierEnvironmentFactor;
 
+    //Weights that depend on the environment.
+    private float speedEnvironmentWeight = 1.0f;
+    private float pullEnvironmentWeight = 1.0f;
+    private float multiplierEnvironmentWeight = 1.0f;
+
+    //Factors that allow agents ignore powerups that are already activated. 
+    //Doesn't apply for pull powerup, since it can be activated several times.
+    private float speedActiveFactor = 1.0f;
+    private float multiplierActiveFactor = 1.0f;
+
+    //Powerups strength
     [Space(10)]
     [Header("Powerups power")]
     [SerializeField]
@@ -193,7 +214,7 @@ public class AgentLogic : MonoBehaviour, IComparable
     private bool debug;
 
     #region Static Variables
-    private static float _minimalSteps = 1.0f;
+    //private static float _minimalSteps = 1.0f;
     //private static float _minimalRayRadius = 1.0f;
     //private static float _minimalSight = 0.1f;
     //private static float _minimalMovingSpeed = 1.0f;
@@ -242,10 +263,13 @@ public class AgentLogic : MonoBehaviour, IComparable
         {
             speedWeight = parent.speedWeight;
             speedDistanceFactor = parent.speedDistanceFactor;
+            speedEnvironmentFactor = parent.speedEnvironmentFactor;
             pullWeight = parent.pullWeight;
             pullDistanceFactor = parent.pullDistanceFactor;
+            pullEnvironmentFactor = parent.pullEnvironmentFactor;
             multiplierWeight = parent.multiplierWeight;
             multiplierDistanceFactor = parent.multiplierDistanceFactor;
+            multiplierEnvironmentFactor = parent.multiplierEnvironmentFactor;
         }
     }
 
@@ -257,14 +281,15 @@ public class AgentLogic : MonoBehaviour, IComparable
     /// <param name="mutationChance">Chance of a mutation happening per gene / weight.</param>
     public void Mutate(float mutationFactor, float mutationChance)
     {
-        if (Random.Range(0.0f, 100.0f) <= mutationChance)
-        {
-            steps += (int)Random.Range(-mutationFactor, +mutationFactor);
-            steps = (int)Mathf.Max(steps, _minimalSteps);
-        }
 
-        //DISABLED MOVEMENT SPEED SIGHT MUTATION FOR BALANCED TESTING
 
+        //DISABLED MOVEMENT SPEED, SIGHT MUTATION FOR BALANCED TESTING
+
+        //if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        //{
+        //    steps += (int)Random.Range(-mutationFactor, +mutationFactor);
+        //    steps = (int)Mathf.Max(steps, _minimalSteps);
+        //}
         //if (Random.Range(0.0f, 100.0f) <= mutationChance)
         //{
         //    rayRadius += (int)Random.Range(-mutationFactor, +mutationFactor);
@@ -326,35 +351,86 @@ public class AgentLogic : MonoBehaviour, IComparable
             enemyDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
         }
 
-        //Powerups factors
+        //Powerups factors 
         if (!abled)
         {
             return;
         }
 
+        //Speed
         if (Random.Range(0.0f, 100.0f) <= mutationChance)
         {
             speedWeight += Random.Range(-mutationFactor, +mutationFactor);
+            if (speedWeight <= 0)
+            {
+                speedWeight = 0;
+            }
         }
         if (Random.Range(0.0f, 100.0f) <= mutationChance)
         {
             speedDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
+            if (speedDistanceFactor <= 0)
+            {
+                speedDistanceFactor = 0;
+            }
         }
         if (Random.Range(0.0f, 100.0f) <= mutationChance)
         {
+            speedEnvironmentFactor += Random.Range(-mutationFactor, +mutationFactor) / 10;
+            if (speedEnvironmentFactor <= 0)
+            {
+                speedEnvironmentFactor = 0;
+            }
+        }
+        //Pull
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
             pullWeight += Random.Range(-mutationFactor, +mutationFactor);
+            if (pullWeight <= 0)
+            {
+                pullWeight = 0;
+            }
         }
         if (Random.Range(0.0f, 100.0f) <= mutationChance)
         {
             pullDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
+            if (pullDistanceFactor <= 0)
+            {
+                pullDistanceFactor = 0;
+            }
         }
         if (Random.Range(0.0f, 100.0f) <= mutationChance)
         {
+            pullEnvironmentFactor += Random.Range(-mutationFactor, +mutationFactor) / 10;
+            if (pullEnvironmentFactor <= 0)
+            {
+                pullEnvironmentFactor = 0;
+            }
+        }
+        //Multiplier
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
             multiplierWeight += Random.Range(-mutationFactor, +mutationFactor);
+            if (multiplierWeight <= 0)
+            {
+                multiplierWeight = 0;
+            }
         }
         if (Random.Range(0.0f, 100.0f) <= mutationChance)
         {
             multiplierDistanceFactor += Random.Range(-mutationFactor, +mutationFactor);
+            if (multiplierDistanceFactor <= 0)
+            {
+                multiplierDistanceFactor = 0;
+            }
+        }
+        if (Random.Range(0.0f, 100.0f) <= mutationChance)
+        {
+            multiplierEnvironmentFactor += Random.Range(-mutationFactor, +mutationFactor) / 10;
+            if (multiplierEnvironmentFactor <= 0)
+            {
+                multiplierEnvironmentFactor = 0;
+            }
         }
     }
 
@@ -400,8 +476,7 @@ public class AgentLogic : MonoBehaviour, IComparable
     /// <summary>
     /// Calculate the best direction to move using the Agent properties.
     /// The agent shoots a ray in a area on front of itself and calculates the utility of each one of them based on what
-    /// it did intersect or using a random value (uses a Random from [randomDirectionValue.x, randomDirectionValue.y]).
-    /// 
+    /// it did intersect or using a random value (uses a Random from [randomDirectionValue.x, randomDirectionValue.y]). 
     /// </summary>
     private void Act()
     {
@@ -410,6 +485,11 @@ public class AgentLogic : MonoBehaviour, IComparable
         {
             visibleObjects.Clear();
             actIteration = 0;
+
+            //Reset environment factor along with the visible objects
+            speedEnvironmentWeight = 1f;
+            pullEnvironmentWeight = 1f;
+            multiplierEnvironmentWeight = 1f;
         }
 
         Transform selfTransform = transform;
@@ -489,7 +569,6 @@ public class AgentLogic : MonoBehaviour, IComparable
             //Calculate the utility of the found object according to its type.
             switch (visibleObject.tag)
             {
-                //All formulas are the same. Only the weights change.
                 case "Box":
                     utility = distanceIndex * boxDistanceFactor + boxWeight;
                     break;
@@ -500,16 +579,23 @@ public class AgentLogic : MonoBehaviour, IComparable
                     utility = distanceIndex * enemyDistanceFactor + enemyWeight;
                     break;
                 case "Speed":
-                    utility = distanceIndex * speedDistanceFactor + speedWeight;
+                    if (!abled)                    
+                        break;                    
+                    utility = distanceIndex * speedDistanceFactor + speedWeight * speedEnvironmentWeight * speedActiveFactor;
                     break;
                 case "Pull":
-                    utility = distanceIndex * pullDistanceFactor + pullWeight;
+                    if (!abled)                    
+                        break;                    
+                    utility = distanceIndex * pullDistanceFactor + pullWeight * pullEnvironmentWeight;
                     break;
                 case "Multiplier":
-                    utility = distanceIndex * multiplierDistanceFactor + multiplierWeight;
+                    if (!abled)                    
+                        break;                    
+                    utility = distanceIndex * multiplierDistanceFactor + multiplierWeight * multiplierEnvironmentWeight * multiplierActiveFactor;
                     break;
             }
 
+            //Add or update the object in the dictionary.
             if (visibleObjects.ContainsKey(visibleObject))
             {
                 visibleObjects[visibleObject] = utility;
@@ -517,6 +603,11 @@ public class AgentLogic : MonoBehaviour, IComparable
             else
             {
                 visibleObjects.Add(visibleObject, utility);
+
+                //Increase the probability of the agent to pick up a powerup, depending on how many objects are around.
+                speedEnvironmentWeight += speedEnvironmentFactor;
+                pullEnvironmentWeight += pullEnvironmentFactor;
+                multiplierEnvironmentWeight += multiplierEnvironmentFactor;
             }
         }
 
@@ -527,7 +618,7 @@ public class AgentLogic : MonoBehaviour, IComparable
     private void ActivateSpeedPowerup()
     {
         speedMultiplier = speedMultiplierPower;
-
+        speedActiveFactor = 0.0f;
     }
 
     private void ActivatePullPowerup()
@@ -551,6 +642,7 @@ public class AgentLogic : MonoBehaviour, IComparable
     private void ActivateMultiplierPowerup()
     {
         pointsMultiplier = pointsMultiplierPower;
+        multiplierActiveFactor = 0.0f;
     }
 
     /// <summary>
@@ -604,6 +696,6 @@ public class AgentLogic : MonoBehaviour, IComparable
     /// <returns></returns>
     public AgentData GetData()
     {
-        return new AgentData(steps, rayRadius, sight, movingSpeed, randomDirectionValue, boxWeight, boxDistanceFactor, boatWeight, boatDistanceFactor, enemyWeight, enemyDistanceFactor, speedWeight, speedDistanceFactor, pullWeight, pullDistanceFactor, multiplierWeight, multiplierDistanceFactor);
+        return new AgentData(steps, rayRadius, sight, movingSpeed, randomDirectionValue, boxWeight, boxDistanceFactor, boatWeight, boatDistanceFactor, enemyWeight, enemyDistanceFactor, speedWeight, speedDistanceFactor,speedEnvironmentFactor, pullWeight, pullDistanceFactor, pullEnvironmentFactor, multiplierWeight, multiplierDistanceFactor, multiplierEnvironmentFactor);
     }
 }
